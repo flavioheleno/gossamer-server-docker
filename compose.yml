@@ -1,0 +1,64 @@
+version: "3.9"
+services:
+  nginx:
+    image: ghcr.io/flavioheleno/nginx:latest
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/status"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    depends_on:
+      - gossamer
+    networks:
+      - gossamer-network
+  gossamer:
+    image: ghcr.io/flavioheleno/gossamer-server-fpm:latest
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/status"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    secrets:
+      - postgres-passwd
+      - postgres-user
+      - postgres-db
+    volumes:
+      - ./data/gossamer/:/var/www/html/local/
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - gossamer-network
+  postgres:
+    image: postgres:14.1-alpine3.15
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres-passwd
+      - POSTGRES_USER_FILE=/run/secrets/postgres-user
+      - POSTGRES_DB_FILE=/run/secrets/postgres-db
+      - POSTGRES_HOST_AUTH_METHOD=scram-sha-256
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    secrets:
+      - postgres-passwd
+      - postgres-user
+      - postgres-db
+    restart: unless-stopped
+    networks:
+      - gossamer-network
+
+secrets:
+  postgres-passwd:
+    file: ./secrets/postgres-passwd.txt
+  postgres-user:
+    file: ./secrets/postgres-user.txt
+  postgres-db:
+    file: ./secrets/postgres-db.txt
+
+networks:
+  gossamer-network:
