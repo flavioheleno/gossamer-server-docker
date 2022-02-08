@@ -2,6 +2,9 @@ version: "3.9"
 services:
   nginx:
     image: ghcr.io/flavioheleno/nginx:latest
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
     ports:
       - "80:80"
     healthcheck:
@@ -17,6 +20,10 @@ services:
       - gossamer-network
   gossamer:
     image: ghcr.io/flavioheleno/gossamer-server-fpm:latest
+    build:
+      context: .
+      dockerfile: gossamer.Dockerfile
+      target: fpm
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/status"]
       interval: 1m30s
