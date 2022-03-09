@@ -1,7 +1,7 @@
 #============================================
 # BUILD
 #============================================
-FROM php:8.1.2-cli-alpine3.15 AS builder
+FROM php:8.1.3-cli-alpine3.15 AS builder
 
 # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
 ENV TZ=:/etc/localtime
@@ -11,9 +11,7 @@ WORKDIR /usr/src
 #============================================
 # Dist dependencies
 #============================================
-RUN apk update && \
-    apk add --no-cache libstdc++ && \
-    apk add --no-cache $PHPIZE_DEPS curl-dev openssl-dev pcre-dev pcre2-dev zlib-dev postgresql-dev libzip-dev libpng-dev && \
+RUN apk add --no-cache $PHPIZE_DEPS curl-dev openssl-dev pcre-dev pcre2-dev zlib-dev postgresql-dev libzip-dev libpng-dev && \
     apk add --no-cache wget ca-certificates git unzip
 
 #============================================
@@ -54,7 +52,7 @@ RUN composer update --no-progress --ignore-platform-reqs --no-dev --prefer-dist 
 #============================================
 # COMMAND LINE INTERFACE
 #============================================
-FROM php:8.1.2-cli-alpine3.15 as cli
+FROM php:8.1.3-cli-alpine3.15 as cli
 
 # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
 ENV TZ=:/etc/localtime
@@ -68,16 +66,15 @@ RUN echo "memory_limit = -1" > /usr/local/etc/php/conf.d/memory.ini && \
     echo "zend.assertions = -1" > /usr/local/etc/php/conf.d/zend.ini
 
 #============================================
-# dumb-init
-#============================================
-RUN apk add --no-cache dumb-init
-
-#============================================
 # Library dependencies
 #============================================
-RUN apk add --no-cache libstdc++ && \
-    apk add --no-cache libpq --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main/ && \
+RUN apk add --no-cache libpq --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main/ && \
     apk add --no-cache libzip
+
+#============================================
+# Other dependencies
+#============================================
+RUN apk add --no-cache dumb-init
 
 #============================================
 # Application
@@ -94,6 +91,14 @@ COPY --from=builder /usr/local/etc/php/conf.d/*.ini /usr/local/etc/php/conf.d/
 #============================================
 USER www-data
 WORKDIR /var/www/html/bin
+
+#============================================
+# Metadata
+#============================================
+LABEL org.opencontainers.image.authors="flaviohbatista@gmail.com" \
+      org.opencontainers.image.title="Gossamer-Server-PHP-CLI" \
+      org.opencontainers.image.url="https://github.com/flavioheleno/gossamer-server-docker" \
+      org.opencontainers.image.vendor="flavioheleno"
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["php"]
@@ -114,18 +119,20 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 RUN echo "memory_limit = 256M" > /usr/local/etc/php/conf.d/memory.ini && \
     echo "zend.assertions = -1" > /usr/local/etc/php/conf.d/zend.ini && \
     echo "expose_php = 0" > /usr/local/etc/php/conf.d/expose_php.ini
-
-#============================================
-# dumb-init
-#============================================
-RUN apk add --no-cache dumb-init
+RUN echo "pm.status_path = /status" >> /usr/local/etc/php-fpm.d/zz-docker.conf
 
 #============================================
 # Library dependencies
 #============================================
-RUN apk add --no-cache libstdc++ && \
-    apk add --no-cache libpq --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main/ && \
+RUN apk add --no-cache libpq --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main/ && \
     apk add --no-cache libzip
+
+#============================================
+# Other dependencies
+#============================================
+RUN apk add --no-cache dumb-init fcgi
+RUN wget -O /usr/local/bin/php-fpm-healthcheck https://raw.githubusercontent.com/renatomefi/php-fpm-healthcheck/master/php-fpm-healthcheck && \
+    chmod +x /usr/local/bin/php-fpm-healthcheck
 
 #============================================
 # Application
@@ -144,6 +151,19 @@ USER www-data
 WORKDIR /var/www/html/public
 
 EXPOSE 9000
+
+#============================================
+# Healthcheck
+#============================================
+HEALTHCHECK --interval=1m30s --timeout=10s --retries=3 --start-period=40s CMD php-fpm-healthcheck || exit 1
+
+#============================================
+# Metadata
+#============================================
+LABEL org.opencontainers.image.authors="flaviohbatista@gmail.com" \
+      org.opencontainers.image.title="Gossamer-Server-PHP-FPM" \
+      org.opencontainers.image.url="https://github.com/flavioheleno/gossamer-server-docker" \
+      org.opencontainers.image.vendor="flavioheleno"
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["php-fpm"]
