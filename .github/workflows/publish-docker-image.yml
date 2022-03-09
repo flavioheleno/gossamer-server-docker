@@ -1,0 +1,114 @@
+# https://docs.github.com/en/actions/publishing-packages/publishing-docker-images#publishing-images-to-github-packages
+name: Publish Docker image
+
+on:
+  push:
+    tags:
+    - '*'
+
+env:
+  REGISTRY: ghcr.io
+  BASE_NAME: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push-nginx:
+    name: Build NGINX
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@42d299face0c5c43a0487c477f595ac9cf22f1a7
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@e5622373a38e60fb6d795a4421e56882f2d7a681
+        with:
+          images: ${{ env.BASE_NAME }}/gossamer-server-nginx
+
+      - name: Build and push "gossamer-server-nginx"
+        uses: docker/build-push-action@1814d3dfb36d6f84174e61f4a4b05bd84089a4b9
+        with:
+          context: .
+          file: nginx.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build-and-push-fpm:
+    name: Build PHP-FPM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@42d299face0c5c43a0487c477f595ac9cf22f1a7
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@e5622373a38e60fb6d795a4421e56882f2d7a681
+        with:
+          images: ${{ env.BASE_NAME }}/gossamer-server-fpm
+
+      - name: Build and push "gossamer-server-fpm"
+        uses: docker/build-push-action@1814d3dfb36d6f84174e61f4a4b05bd84089a4b9
+        with:
+          context: .
+          file: gossamer.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          target: fpm
+          labels: ${{ steps.meta.outputs.labels }}
+
+
+  build-and-push-cli:
+    name: Build PHP-CLI
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@42d299face0c5c43a0487c477f595ac9cf22f1a7
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@e5622373a38e60fb6d795a4421e56882f2d7a681
+        with:
+          images: ${{ env.BASE_NAME }}/gossamer-server-cli
+
+      - name: Build and push "gossamer-server-cli"
+        uses: docker/build-push-action@1814d3dfb36d6f84174e61f4a4b05bd84089a4b9
+        with:
+          context: .
+          file: gossamer.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          target: cli
+          labels: ${{ steps.meta.outputs.labels }}
