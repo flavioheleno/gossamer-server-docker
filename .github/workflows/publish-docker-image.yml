@@ -36,7 +36,7 @@ jobs:
           images: ${{ env.BASE_NAME }}/gossamer-server-nginx
 
       - name: Build and push "gossamer-server-nginx"
-        uses: docker/build-push-action@e551b19e49efd4e98792db7592c17c09b89db8d8
+        uses: docker/build-push-action@1cb9d22b932e4832bb29793b7777ec860fc1cde0
         with:
           context: .
           file: nginx.Dockerfile
@@ -69,7 +69,7 @@ jobs:
           images: ${{ env.BASE_NAME }}/gossamer-server-fpm
 
       - name: Build and push "gossamer-server-fpm"
-        uses: docker/build-push-action@e551b19e49efd4e98792db7592c17c09b89db8d8
+        uses: docker/build-push-action@1cb9d22b932e4832bb29793b7777ec860fc1cde0
         with:
           context: .
           file: gossamer.Dockerfile
@@ -104,7 +104,7 @@ jobs:
           images: ${{ env.BASE_NAME }}/gossamer-server-cli
 
       - name: Build and push "gossamer-server-cli"
-        uses: docker/build-push-action@e551b19e49efd4e98792db7592c17c09b89db8d8
+        uses: docker/build-push-action@1cb9d22b932e4832bb29793b7777ec860fc1cde0
         with:
           context: .
           file: gossamer.Dockerfile
