@@ -1,7 +1,7 @@
 #============================================
 # BUILD
 #============================================
-FROM php:8.1.11-cli-alpine3.16 AS builder
+FROM php:8.2.4-cli-alpine3.16 AS builder
 
 # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
 ENV TZ=:/etc/localtime
@@ -52,7 +52,7 @@ RUN composer update --no-progress --ignore-platform-reqs --no-dev --prefer-dist 
 #============================================
 # COMMAND LINE INTERFACE
 #============================================
-FROM php:8.1.11-cli-alpine3.16 as cli
+FROM php:8.2.4-cli-alpine3.16 as cli
 
 # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
 ENV TZ=:/etc/localtime
@@ -106,7 +106,7 @@ CMD ["php"]
 #============================================
 # FASTCGI PROCESS MANAGER
 #============================================
-FROM php:8.1.11-cli-alpine3.16 as fpm
+FROM php:8.2.4-cli-alpine3.16 as fpm
 
 # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
 ENV TZ=:/etc/localtime
